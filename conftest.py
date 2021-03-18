@@ -9,6 +9,10 @@
 #
 # FIXTURES
 #
+# ... let us cache the result of an expensive operation (like a network request)
+# ... and share it across multiple tests, without making additional requests.
+# ... this minimizes the number of network requests and reduces the cost of running tests.
+#
 
 import pytest
 from app.robo import fetch_data
