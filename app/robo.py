@@ -1,6 +1,7 @@
 
 import os
 import json
+from functools import lru_cache
 from dotenv import load_dotenv
 import requests
 from pandas import DataFrame
@@ -10,41 +11,57 @@ load_dotenv()
 
 API_KEY = os.getenv("ALPHAVANTAGE_API_KEY", default="abc123")
 
-def fetch_data(symbol):
-    request_url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={API_KEY}"
-    response = requests.get(request_url)
-    return json.loads(response.text)
+class RoboAdvisor:
+    def __init__(self, symbol, api_key=API_KEY):
+        self.symbol = symbol
+        self.api_key = api_key
 
-def process_data(parsed_response):
-    if "Time Series (Daily)" not in list(parsed_response.keys()):
-        return None
+    def fetch_data(self):
+        # a private method of sorts - can alternatively be called _fetch_data() or something
+        request_url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={self.symbol}&apikey={self.api_key}"
+        response = requests.get(request_url)
+        return json.loads(response.text)
 
-    records = []
-    for date, daily_data in parsed_response["Time Series (Daily)"].items():
-        records.append({
-            "date": date,
-            "open": float(daily_data["1. open"]),
-            "high": float(daily_data["2. high"]),
-            "low": float(daily_data["3. low"]),
-            "close": float(daily_data["4. close"]),
-            "volume": int(daily_data["5. volume"]),
-        })
-    return DataFrame(records)
+    @property
+    @lru_cache(maxsize=None) # cache the results of this network request!
+    def parsed_response(self):
+        return self.fetch_data()
 
-def summarize_data(prices_df):
-    """ Param : prices_df (pandas.DataFrame) """
-    return {
-        "latest_close": prices_df.iloc[0]["close"],
-        "recent_high": prices_df["high"].max(),
-        "recent_low": prices_df["low"].min(),
-    }
+    @property
+    @lru_cache(maxsize=None) # cache the results of this data processing!
+    def prices_df(self):
+        if "Time Series (Daily)" not in list(self.parsed_response.keys()):
+            return None
 
-def prepare_data_for_charting(prices_df):
-    """ Sorts the data by date ascending, so it can be charted """
-    chart_df = prices_df.copy()
-    chart_df.sort_values(by="date", ascending=True, inplace=True)
-    #chart_df.index.reset_index(inplace=True)
-    return chart_df
+        records = []
+        for date, daily_data in self.parsed_response["Time Series (Daily)"].items():
+            records.append({
+                "date": date,
+                "open": float(daily_data["1. open"]),
+                "high": float(daily_data["2. high"]),
+                "low": float(daily_data["3. low"]),
+                "close": float(daily_data["4. close"]),
+                "volume": int(daily_data["5. volume"]),
+            })
+        return DataFrame(records)
+
+    @property
+    @lru_cache(maxsize=None) # cache the results of this data processing!
+    def summary(self):
+        """ Param : prices_df (pandas.DataFrame) """
+        return {
+            "latest_close": self.prices_df.iloc[0]["close"],
+            "recent_high": self.prices_df["high"].max(),
+            "recent_low": self.prices_df["low"].min(),
+        }
+
+    @property
+    @lru_cache(maxsize=None) # cache the results of this data processing!
+    def chart_df(self):
+        """ Sorts the data by date ascending, so it can be charted """
+        chart_df = self.prices_df.copy()
+        chart_df.sort_values(by="date", ascending=True, inplace=True)
+        return chart_df
 
 
 if __name__ == '__main__':
@@ -52,17 +69,17 @@ if __name__ == '__main__':
     # FETCH DATA
 
     symbol = input("Please input a stock symbol (e.g. 'MSFT'): ")
-    parsed_response = fetch_data(symbol)
+    advisor = RoboAdvisor(symbol=symbol)
 
     # PROCESS DATA
 
-    df = process_data(parsed_response)
+    df = advisor.prices_df
 
     if isinstance(df, DataFrame):
 
         # DISPLAY RESULTS
 
-        summary = summarize_data(df)
+        summary = advisor.summary
 
         print("LATEST CLOSING PRICE: ", summary["latest_close"])
         print("RECENT HIGH: ", summary["recent_high"])
@@ -75,6 +92,5 @@ if __name__ == '__main__':
 
         # CHART PRICES OVER TIME
 
-        chart_df = prepare_data_for_charting(df)
-        fig = px.line(chart_df, x="date", y="close", title=f"Closing Prices for {symbol.upper()}") # see: https://plotly.com/python-api-reference/generated/plotly.express.line
+        fig = px.line(advisor.chart_df, x="date", y="close", title=f"Closing Prices for {symbol.upper()}") # see: https://plotly.com/python-api-reference/generated/plotly.express.line
         fig.show()
