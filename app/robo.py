@@ -39,6 +39,13 @@ def summarize_data(prices_df):
         "recent_low": prices_df["low"].min(),
     }
 
+def prepare_data_for_charting(prices_df):
+    """ Sorts the data by date ascending, so it can be charted """
+    chart_df = prices_df.copy()
+    chart_df.sort_values(by="date", ascending=True, inplace=True)
+    #chart_df.index.reset_index(inplace=True)
+    return chart_df
+
 
 if __name__ == '__main__':
 
@@ -68,5 +75,6 @@ if __name__ == '__main__':
 
         # CHART PRICES OVER TIME
 
-        fig = px.line(df, y="close", title=f"Closing Prices for {symbol.upper()}") # see: https://plotly.com/python-api-reference/generated/plotly.express.line
+        chart_df = prepare_data_for_charting(df)
+        fig = px.line(chart_df, x="date", y="close", title=f"Closing Prices for {symbol.upper()}") # see: https://plotly.com/python-api-reference/generated/plotly.express.line
         fig.show()
