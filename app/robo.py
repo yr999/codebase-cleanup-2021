@@ -16,6 +16,9 @@ def fetch_data(symbol):
     return json.loads(response.text)
 
 def process_data(parsed_response):
+    if "Time Series (Daily)" not in list(parsed_response.keys()):
+        return None
+
     records = []
     for date, daily_data in parsed_response["Time Series (Daily)"].items():
         records.append({
@@ -48,20 +51,22 @@ if __name__ == '__main__':
 
     df = process_data(parsed_response)
 
-    # DISPLAY RESULTS
+    if isinstance(df, DataFrame):
 
-    summary = summarize_data(df)
+        # DISPLAY RESULTS
 
-    print("LATEST CLOSING PRICE: ", summary["latest_close"])
-    print("RECENT HIGH: ", summary["recent_high"])
-    print("RECENT LOW: ", summary["recent_low"])
+        summary = summarize_data(df)
 
-    # EXPORT PRICES TO CSV
+        print("LATEST CLOSING PRICE: ", summary["latest_close"])
+        print("RECENT HIGH: ", summary["recent_high"])
+        print("RECENT LOW: ", summary["recent_low"])
 
-    csv_filepath = os.path.join(os.path.dirname(__file__), "..", "data", f"{symbol.lower()}_prices.csv")
-    df.to_csv(csv_filepath)
+        # EXPORT PRICES TO CSV
 
-    # CHART PRICES OVER TIME
+        csv_filepath = os.path.join(os.path.dirname(__file__), "..", "data", f"{symbol.lower()}_prices.csv")
+        df.to_csv(csv_filepath)
 
-    fig = px.line(df, y="close", title=f"Closing Prices for {symbol.upper()}") # see: https://plotly.com/python-api-reference/generated/plotly.express.line
-    fig.show()
+        # CHART PRICES OVER TIME
+
+        fig = px.line(df, y="close", title=f"Closing Prices for {symbol.upper()}") # see: https://plotly.com/python-api-reference/generated/plotly.express.line
+        fig.show()
