@@ -17,7 +17,6 @@
 import pytest
 from app.robo import RoboAdvisor
 
-
 @pytest.fixture(scope="module")
 def googl_advisor():
     return RoboAdvisor(symbol="AMZN") # FOR TESTING REAL REQUESTS (REMEMBER TO SKIP CI)

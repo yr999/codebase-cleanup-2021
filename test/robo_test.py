@@ -24,7 +24,6 @@ def test_parsed_response(googl_advisor, oops_advisor):
     assert "Meta Data" not in response_keys
     assert "Time Series (Daily)" not in response_keys
 
-
 @pytest.mark.skipif(CI_ENV==True, reason="avoid issuing HTTP requests on the CI server") # skips this test on CI
 def test_prices_df(googl_advisor, oops_advisor):
     # with valid symbol, should provide a dataframe with expected headers:
