@@ -1,9 +1,13 @@
-
+import os
+import pytest
 from pandas import DataFrame
 
 from app.robo import RoboAdvisor
 
-# SKIP CI
+# expect default environment variable setting of "CI=true" on Travis CI. see: https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+CI_ENV = os.getenv("CI") == "true"
+
+@pytest.mark.skipif(CI_ENV==True, reason="avoid issuing HTTP requests on the CI server") # skips this test on CI
 def test_parsed_response(googl_advisor, oops_advisor):
     # with valid symbol, should containing certain expected characteristics (time series data with daily prices):
     parsed_response = googl_advisor.parsed_response
@@ -21,7 +25,7 @@ def test_parsed_response(googl_advisor, oops_advisor):
     assert "Time Series (Daily)" not in response_keys
 
 
-# SKIP CI
+@pytest.mark.skipif(CI_ENV==True, reason="avoid issuing HTTP requests on the CI server") # skips this test on CI
 def test_prices_df(googl_advisor, oops_advisor):
     # with valid symbol, should provide a dataframe with expected headers:
     assert isinstance(googl_advisor.prices_df, DataFrame)
