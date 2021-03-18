@@ -15,6 +15,7 @@ class RoboAdvisor:
     def __init__(self, symbol, api_key=API_KEY):
         self.symbol = symbol
         self.api_key = api_key
+        self._parsed_response = None
 
     def fetch_data(self):
         # a private method of sorts - can alternatively be called _fetch_data() or something
@@ -25,7 +26,11 @@ class RoboAdvisor:
     @property
     @lru_cache(maxsize=None) # cache the results of this network request!
     def parsed_response(self):
-        return self.fetch_data()
+        return self._parsed_response or self.fetch_data() # only make a real network request if we have not overridden / set this value (like we do when testing)
+
+    @parsed_response.setter  # use a setter (mainly for testing purposes). see: https://docs.python.org/3/library/functions.html#property
+    def parsed_response(self, value):
+        self._parsed_response = value
 
     @property
     @lru_cache(maxsize=None) # cache the results of this data processing!

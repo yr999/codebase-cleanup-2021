@@ -15,15 +15,17 @@
 #
 
 import pytest
-from app.robo import fetch_data
+from app.robo import RoboAdvisor
 
 @pytest.fixture(scope="module")
 def parsed_googl_response():
-    return fetch_data("GOOGL")
+    advisor = RoboAdvisor(symbol="GOOGL")
+    return advisor.fetch_data()
 
 @pytest.fixture(scope="module")
 def parsed_oops_response():
-    return fetch_data("OOPS")
+    advisor = RoboAdvisor(symbol="OOPS")
+    return advisor.fetch_data()
 
 #
 # MOCK DATA
