@@ -15,6 +15,28 @@ def fetch_data(symbol):
     response = requests.get(request_url)
     return json.loads(response.text)
 
+def process_data(parsed_response):
+    records = []
+    for date, daily_data in parsed_response["Time Series (Daily)"].items():
+        records.append({
+            "date": date,
+            "open": float(daily_data["1. open"]),
+            "high": float(daily_data["2. high"]),
+            "low": float(daily_data["3. low"]),
+            "close": float(daily_data["4. close"]),
+            "volume": int(daily_data["5. volume"]),
+        })
+    return DataFrame(records)
+
+def summarize_data(prices_df):
+    """ Param : prices_df (pandas.DataFrame) """
+    return {
+        "latest_close": prices_df.iloc[0]["close"],
+        "recent_high": prices_df["high"].max(),
+        "recent_low": prices_df["low"].min(),
+    }
+
+
 if __name__ == '__main__':
 
     # FETCH DATA
@@ -24,26 +46,15 @@ if __name__ == '__main__':
 
     # PROCESS DATA
 
-    records = []
-    for date, daily_data in parsed_response["Time Series (Daily)"].items():
-        record = {
-            "date": date,
-            "open": float(daily_data["1. open"]),
-            "high": float(daily_data["2. high"]),
-            "low": float(daily_data["3. low"]),
-            "close": float(daily_data["4. close"]),
-            "volume": int(daily_data["5. volume"]),
-        }
-        records.append(record)
-
-    df = DataFrame(records)
+    df = process_data(parsed_response)
 
     # DISPLAY RESULTS
 
-    print("LATEST CLOSING PRICE: ", records[0]["close"])
-    print("LATEST CLOSING PRICE: ", df.iloc[0]["close"])
-    print("RECENT HIGH: ", df["high"].max())
-    print("RECENT LOW: ", df["low"].min())
+    summary = summarize_data(df)
+
+    print("LATEST CLOSING PRICE: ", summary["latest_close"])
+    print("RECENT HIGH: ", summary["recent_high"])
+    print("RECENT LOW: ", summary["recent_low"])
 
     # EXPORT PRICES TO CSV
 
