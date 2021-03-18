@@ -4,6 +4,7 @@ from pandas import DataFrame
 
 from app.robo import process_data, summarize_data
 
+# SKIP CI
 def test_fetch(parsed_googl_response):
     # we are testing the fetch_data function indirectly through our fixture (see conftest.py)
 
@@ -15,11 +16,16 @@ def test_fetch(parsed_googl_response):
     price_keys = list(prices.keys())
     assert price_keys == ["1. open", "2. high", "3. low", "4. close", "5. volume"]
 
-def test_process(parsed_googl_response):
+# SKIP CI
+def test_process(parsed_googl_response, parsed_oops_response):
     googl_df = process_data(parsed_googl_response)
     assert isinstance(googl_df, DataFrame)
     assert len(googl_df) == 100
     assert list(googl_df.columns) == ["date", "open", "high", "low", "close", "volume"]
+
+    # it should gracefully handle response errors
+    assert process_data(parsed_oops_response) is None
+
 
 def test_summarize():
     assert summarize_data(process_data(mock_msft_response)) == {
